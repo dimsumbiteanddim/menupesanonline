@@ -182,184 +182,108 @@
 
     let keranjang = [];
     let totalBelanja = 0;
-    let kartuTerbukaIndex = 0; // Kartu pertama otomatis terbuka
-
-    let stokDapurPcs = { dimsum: 100, tahu: 100, dimsumGoreng: 100 };
-    let daftarKartuMenu = [];
-
-    // TEMA WARNA KATEGORI KARTU
-    const warnaKategori = [
-        "bg-purple-600 text-white",
-        "bg-amber-500 text-white",
-        "bg-orange-500 text-white",
-        "bg-yellow-500 text-black",
-        "bg-teal-600 text-white",
-        "bg-red-600 text-white",
-        "bg-amber-800 text-white",
-        "bg-rose-700 text-white"
-    ];
+    let daftarMenuServer = [];
 
     window.onload = function() {
         loadData();
         setInterval(sinkronkanStokDariSheets, 5000);
     };
 
-    // FUNGSI MEMUAT DATA LENGKAP MENU & STOK DARI SPREADSHEET
+    // FUNGSI MEMUAT DATA DARI APPS SCRIPT (action=getStok)
     function loadData() {
-        fetch(urlWebApp + "?t=" + new Date().getTime())
+        let loadingEl = document.getElementById("kontainer_kartu_menu");
+        if (loadingEl) {
+            loadingEl.innerHTML = `<p class="text-center text-xs text-gray-500 py-4">⏳ Memuat data menu dari Spreadsheet...</p>`;
+        }
+
+        fetch(urlWebApp + "?action=getStok&t=" + new Date().getTime())
             .then(res => res.json())
             .then(data => {
-                if (data) {
-                    if (data.stokDimsumPcs !== undefined) {
-                        stokDapurPcs.dimsum = parseInt(data.stokDimsumPcs || 0);
-                        stokDapurPcs.tahu = parseInt(data.stokTahuPcs || 0);
-                        stokDapurPcs.dimsumGoreng = parseInt(data.stokDimsumGorengPcs || 0);
-                    }
+                console.log("Data diterima dari Apps Script:", data);
 
-                    if (data.daftarKartuMenu && data.daftarKartuMenu.length > 0) {
-                        daftarKartuMenu = data.daftarKartuMenu.map((k, i) => ({
-                            ...k,
-                            temaWarna: warnaKategori[i % warnaKategori.length]
-                        }));
-                    } else if (data.menuList && data.menuList.length > 0) {
-                        // KELOMPOKKAN MENU BERDASARKAN KATEGORI DARI SPREADSHEET
-                        let grouped = {};
-                        data.menuList.forEach(m => {
-                            let kat = m.kategori || "Menu Lainnya";
-                            if (!grouped[kat]) {
-                                grouped[kat] = {
-                                    namaKartu: kat,
-                                    kategoriBahan: m.bahan || "dimsum",
-                                    items: []
-                                };
-                            }
-                            grouped[kat].items.push({
-                                nama: m.nama,
-                                harga: m.harga,
-                                desc: m.desc || "Porsi",
-                                isiPcs: m.isiPcs || 1
-                            });
-                        });
-                        daftarKartuMenu = Object.values(grouped).map((k, i) => ({
-                            ...k,
-                            temaWarna: warnaKategori[i % warnaKategori.length]
-                        }));
-                    }
-
-                    renderKartuMenu();
+                if (data && data.menu && Array.isArray(data.menu)) {
+                    daftarMenuServer = data.menu;
+                    renderMenu();
+                } else {
+                    document.getElementById("kontainer_kartu_menu").innerHTML = 
+                        `<p class="text-center text-xs text-gray-500 py-4">Tidak ada data menu tersedia.</p>`;
                 }
             })
             .catch(err => {
-                console.log("Gagal memuat data Spreadsheet:", err);
+                console.error("Gagal memuat data Spreadsheet:", err);
+                document.getElementById("kontainer_kartu_menu").innerHTML = 
+                    `<p class="text-center text-xs text-red-500 py-4">❌ Gagal mengambil data menu dari server.</p>`;
             });
     }
 
     function sinkronkanStokDariSheets() {
-        fetch(urlWebApp + "?t=" + new Date().getTime())
+        fetch(urlWebApp + "?action=getStok&t=" + new Date().getTime())
             .then(res => res.json())
-            .then(resData => {
-                if (resData) {
-                    let stokBaruDimsum = parseInt(resData.stokDimsumPcs || 0);
-                    let stokBaruTahu = parseInt(resData.stokTahuPcs || 0);
-                    let stokBaruGoreng = parseInt(resData.stokDimsumGorengPcs || 0);
-
-                    if (stokBaruDimsum !== stokDapurPcs.dimsum || 
-                        stokBaruTahu !== stokDapurPcs.tahu || 
-                        stokBaruGoreng !== stokDapurPcs.dimsumGoreng) {
-                        
-                        stokDapurPcs.dimsum = stokBaruDimsum;
-                        stokDapurPcs.tahu = stokBaruTahu;
-                        stokDapurPcs.dimsumGoreng = stokBaruGoreng;
-                        
-                        renderKartuMenu();
-                    }
+            .then(data => {
+                if (data && data.menu && Array.isArray(data.menu)) {
+                    daftarMenuServer = data.menu;
+                    renderMenu();
                 }
             })
             .catch(err => console.log("Gagal sync live stok:", err));
     }
 
-    function toggleKartu(indexKartu) {
-        kartuTerbukaIndex = (kartuTerbukaIndex === indexKartu) ? null : indexKartu;
-        renderKartuMenu();
-    }
+    function renderMenu() {
+        let container = document.getElementById("kontainer_kartu_menu");
+        if (!container) return;
 
-    function renderKartuMenu() {
-        let html = "";
-
-        if (daftarKartuMenu.length === 0) {
-            document.getElementById("kontainer_kartu_menu").innerHTML = `<p class="text-center text-xs text-gray-500 py-4">Tidak ada data menu.</p>`;
+        if (daftarMenuServer.length === 0) {
+            container.innerHTML = `<p class="text-center text-xs text-gray-500 py-4">Tidak ada data menu tersedia.</p>`;
             return;
         }
 
-        daftarKartuMenu.forEach((kartu, indexKartu) => {
-            let idIsiKartu = `isi_kartu_${indexKartu}`;
-            let idPanahKartu = `panah_kartu_${indexKartu}`;
-            let sisaPcsBahan = stokDapurPcs[kartu.kategoriBahan] || 0;
-            let isOpen = kartuTerbukaIndex === indexKartu;
+        let html = `<div class="grid grid-cols-1 gap-2 p-2">`;
+
+        daftarMenuServer.forEach((item, index) => {
+            let idInput = `qty_${index}`;
+            let stokReady = item.stok > 0;
 
             html += `
-                <div class="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
-                    <button type="button" onclick="toggleKartu(${indexKartu})" class="w-full ${kartu.temaWarna} px-3 py-2 flex justify-between items-center cursor-pointer select-none text-left">
-                        <h3 class="font-black text-xs tracking-wide">📦 ${kartu.namaKartu}</h3>
-                        <div class="flex items-center gap-1.5">
-                            <span class="text-[9px] font-semibold bg-white/20 px-1.5 py-0.5 rounded-full">${kartu.items.length} opsi</span>
-                            <span id="${idPanahKartu}" class="text-xs font-bold">${isOpen ? '▲' : '▼'}</span>
-                        </div>
-                    </button>
-
-                    <div id="${idIsiKartu}" class="p-2 grid grid-cols-1 gap-2 ${isOpen ? '' : 'hidden'} border-t border-gray-100">
-            `;
-
-            kartu.items.forEach((item, indexItem) => {
-                let idInput = `qty_${indexKartu}_${indexItem}`;
-                let namaLengkap = `${kartu.namaKartu} - ${item.nama}`;
-                let porsiMaksimal = Math.floor(sisaPcsBahan / item.isiPcs);
-                let stokReady = porsiMaksimal > 0;
-
-                html += `
-                    <div class="border border-gray-200 bg-gray-50/50 rounded-lg p-2 flex flex-col justify-between hover:border-amber-300 transition ${!stokReady ? 'opacity-60' : ''}">
-                        <div>
-                            <div class="flex justify-between items-start gap-1">
-                                <span class="font-extrabold text-[11px] text-gray-800 block">${item.nama}</span>
-                                <span class="text-[8px] font-bold bg-amber-100 text-amber-800 px-1 py-0.5 rounded shrink-0">${item.desc}</span>
-                            </div>
-                            <div class="mt-0.5 mb-1.5 flex justify-between items-center">
-                                <span class="font-black text-xs text-amber-600">Rp ${item.harga.toLocaleString('id-ID')}</span>
-                                <span class="text-[8px] font-bold ${stokReady ? 'text-gray-500' : 'text-red-500'}">Maks: ${porsiMaksimal} Porsi</span>
-                            </div>
-                        </div>
-
-                        <div class="space-y-1 mt-auto">
-                            ${stokReady ? `
-                                <div class="flex items-center bg-white border border-gray-300 rounded overflow-hidden h-6">
-                                    <button onclick="kurangQty('${idInput}')" type="button" class="px-2 h-full text-gray-700 font-black hover:bg-gray-100 text-[10px] cursor-pointer">-</button>
-                                    <input type="number" id="${idInput}" value="1" min="1" max="${porsiMaksimal}" readonly class="w-full text-center font-extrabold bg-white text-[10px] text-black border-none focus:outline-none">
-                                    <button onclick="tambahQty('${idInput}', ${porsiMaksimal})" type="button" class="px-2 h-full text-gray-700 font-black hover:bg-gray-100 text-[10px] cursor-pointer">+</button>
-                                </div>
-                                <button onclick="tambahKeKeranjang('${namaLengkap}', ${item.harga}, '${idInput}', ${porsiMaksimal})" type="button" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-black text-[9px] py-1.5 rounded shadow-xs cursor-pointer transition active:scale-95">
-                                    + KERANJANG
-                                </button>
-                            ` : `
-                                <div class="w-full bg-red-100 text-red-700 font-black text-[9px] py-1 rounded text-center border border-red-200 select-none">
-                                    🚫 STOK HABIS
-                                </div>
-                            `}
+                <div class="border border-gray-200 bg-white rounded-lg p-2.5 flex justify-between items-center shadow-xs ${!stokReady ? 'opacity-60' : ''}">
+                    <div class="flex-1 pr-2">
+                        <span class="font-bold text-xs text-gray-800 block">${item.produk}</span>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="font-black text-xs text-amber-600">Rp ${item.harga.toLocaleString('id-ID')}</span>
+                            <span class="text-[9px] font-semibold px-1.5 py-0.5 rounded ${stokReady ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
+                                ${stokReady ? 'Stok: ' + item.stok + ' Porsi' : 'Stok Habis'}
+                            </span>
                         </div>
                     </div>
-                `;
-            });
 
-            html += `</div></div>`;
+                    <div class="w-28 shrink-0 space-y-1">
+                        ${stokReady ? `
+                            <div class="flex items-center bg-white border border-gray-300 rounded overflow-hidden h-7">
+                                <button onclick="kurangQty('${idInput}')" type="button" class="px-2 h-full text-gray-700 font-black hover:bg-gray-100 text-xs cursor-pointer">-</button>
+                                <input type="number" id="${idInput}" value="1" min="1" max="${item.stok}" readonly class="w-full text-center font-extrabold bg-white text-xs text-black border-none focus:outline-none">
+                                <button onclick="tambahQty('${idInput}', ${item.stok})" type="button" class="px-2 h-full text-gray-700 font-black hover:bg-gray-100 text-xs cursor-pointer">+</button>
+                            </div>
+                            <button onclick="tambahKeKeranjang('${item.produk}', ${item.harga}, '${idInput}', ${item.stok})" type="button" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-black text-[10px] py-1.5 rounded shadow-xs cursor-pointer transition active:scale-95">
+                                + KERANJANG
+                            </button>
+                        ` : `
+                            <div class="w-full bg-red-100 text-red-700 font-black text-[9px] py-2 rounded text-center border border-red-200 select-none">
+                                🚫 HABIS
+                            </div>
+                        `}
+                    </div>
+                </div>
+            `;
         });
 
-        document.getElementById("kontainer_kartu_menu").innerHTML = html;
+        html += `</div>`;
+        container.innerHTML = html;
     }
 
     function tambahQty(id, maxStok) {
         let el = document.getElementById(id);
         let val = parseInt(el.value || 1);
         if (val < maxStok) el.value = val + 1;
-        else alert(`Stok dapur hanya mencukupi maksimal ${maxStok} porsi!`);
+        else alert(`Stok maksimal tersedia hanya ${maxStok} porsi!`);
     }
 
     function kurangQty(id) {
@@ -372,16 +296,16 @@
         let qtyInput = parseInt(document.getElementById(idInput).value) || 1;
         let idx = keranjang.findIndex(x => x.nama === namaItem);
 
-        let qtyDiKeranjangSaatIni = idx > -1 ? keranjang[idx].qty : 0;
-        let totalAkanDipesan = qtyDiKeranjangSaatIni + qtyInput;
+        let qtyDiKeranjang = idx > -1 ? keranjang[idx].qty : 0;
+        let totalPesanan = qtyDiKeranjang + qtyInput;
 
-        if (totalAkanDipesan > maxStok) {
-            alert(`Stok dapur hanya mencukupi maksimal ${maxStok} porsi untuk menu ini.`);
+        if (totalPesanan > maxStok) {
+            alert(`Sisa stok hanya ${maxStok} porsi.`);
             return;
         }
 
         if (idx > -1) {
-            keranjang[idx].qty = totalAkanDipesan;
+            keranjang[idx].qty = totalPesanan;
         } else {
             keranjang.push({ nama: namaItem, harga: harga, qty: qtyInput });
         }
@@ -452,7 +376,7 @@
 
         let payload = {
             action: "onlineOrder",
-            nama: nama,
+            namaPelanggan: nama,
             nomorWA: hp,
             tipePesanan: tipe,
             pembayaran: bayar,
@@ -490,7 +414,7 @@
         document.getElementById("modal_sukses").classList.add("hidden");
     }
 
-    // ==================== LOGIKA PENDAFTARAN & INSTALASI PWA ====================
+    // PWA INSTALL PROMPT
     let deferredPrompt;
     const pwaBadge = document.getElementById('pwaBadge');
     const pwaInstallBtn = document.getElementById('pwaInstallBtn');
@@ -525,7 +449,7 @@
         deferredPrompt = null;
     });
 
-    // AUTO UPDATE SERVICE WORKER
+    // SERVICE WORKER
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./sw.js')

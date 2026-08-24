@@ -182,14 +182,27 @@
 
     let keranjang = [];
     let totalBelanja = 0;
-    let daftarMenuServer = [];
+    let daftarKartuMenu = [];
+    let kartuTerbukaIndex = 0; // Kartu pertama terbuka default
+
+    let stokDapurPcs = { dimsum: 100, tahu: 100, dimsumGoreng: 100 };
+
+    const warnaKategori = [
+        "bg-purple-600 text-white",
+        "bg-amber-500 text-white",
+        "bg-orange-500 text-white",
+        "bg-yellow-500 text-black",
+        "bg-teal-600 text-white",
+        "bg-red-600 text-white",
+        "bg-amber-800 text-white",
+        "bg-rose-700 text-white"
+    ];
 
     window.onload = function() {
         loadData();
         setInterval(sinkronkanStokDariSheets, 5000);
     };
 
-    // FUNGSI MEMUAT DATA DARI APPS SCRIPT (action=getStok)
     function loadData() {
         let loadingEl = document.getElementById("kontainer_kartu_menu");
         if (loadingEl) {
@@ -199,18 +212,24 @@
         fetch(urlWebApp + "?action=getStok&t=" + new Date().getTime())
             .then(res => res.json())
             .then(data => {
-                console.log("Data diterima dari Apps Script:", data);
+                if (data) {
+                    if (data.stokDimsumPcs !== undefined) {
+                        stokDapurPcs.dimsum = parseInt(data.stokDimsumPcs || 0);
+                        stokDapurPcs.tahu = parseInt(data.stokTahuPcs || 0);
+                        stokDapurPcs.dimsumGoreng = parseInt(data.stokDimsumGorengPcs || 0);
+                    }
 
-                if (data && data.menu && Array.isArray(data.menu)) {
-                    daftarMenuServer = data.menu;
-                    renderMenu();
-                } else {
-                    document.getElementById("kontainer_kartu_menu").innerHTML = 
-                        `<p class="text-center text-xs text-gray-500 py-4">Tidak ada data menu tersedia.</p>`;
+                    if (data.menu && Array.isArray(data.menu)) {
+                        kelompokkanMenu(data.menu);
+                        renderKartuMenu();
+                    } else {
+                        document.getElementById("kontainer_kartu_menu").innerHTML = 
+                            `<p class="text-center text-xs text-gray-500 py-4">Tidak ada data menu tersedia.</p>`;
+                    }
                 }
             })
             .catch(err => {
-                console.error("Gagal memuat data Spreadsheet:", err);
+                console.error("Gagal memuat data:", err);
                 document.getElementById("kontainer_kartu_menu").innerHTML = 
                     `<p class="text-center text-xs text-red-500 py-4">❌ Gagal mengambil data menu dari server.</p>`;
             });
@@ -221,61 +240,132 @@
             .then(res => res.json())
             .then(data => {
                 if (data && data.menu && Array.isArray(data.menu)) {
-                    daftarMenuServer = data.menu;
-                    renderMenu();
+                    stokDapurPcs.dimsum = parseInt(data.stokDimsumPcs || 0);
+                    stokDapurPcs.tahu = parseInt(data.stokTahuPcs || 0);
+                    stokDapurPcs.dimsumGoreng = parseInt(data.stokDimsumGorengPcs || 0);
+                    kelompokkanMenu(data.menu);
+                    renderKartuMenu();
                 }
             })
             .catch(err => console.log("Gagal sync live stok:", err));
     }
 
-    function renderMenu() {
+    // FUNGSI UTAMA MENGELOMPOKKAN LIST MENTAH DARI APPS SCRIPT MENJADI KARTU ACCORDION
+    function kelompokkanMenu(rawMenu) {
+        let grouped = {};
+
+        rawMenu.forEach(m => {
+            let nama = m.produk;
+            let lower = nama.toLowerCase();
+            let kategori = "Menu Lainnya";
+
+            // Deteksi Kategori Kartu berdasarkan Nama Produk
+            if (lower.includes("ngemil") || lower.includes("duo") || lower.includes("sultan") || lower.includes("sekeluarga")) {
+                kategori = "PAKET BUNDLING PROMO";
+            } else if (lower.includes("mentai")) {
+                kategori = "Dimsum Mentai";
+            } else if (lower.includes("keju")) {
+                kategori = "Dimsum Keju";
+            } else if (lower.includes("mix")) {
+                kategori = "Dimsum Mix";
+            } else if (lower.includes("goreng")) {
+                kategori = "Dimsum Goreng Paket";
+            } else if (lower.includes("tahu") || lower.includes("bakso")) {
+                kategori = "Tahu Bakso Goreng";
+            } else if (lower.includes("dimsum")) {
+                kategori = "Dimsum Original";
+            }
+
+            if (!grouped[kategori]) {
+                grouped[kategori] = [];
+            }
+
+            grouped[kategori].push(m);
+        });
+
+        // Format ulang ke struktur kartu accordion
+        daftarKartuMenu = Object.keys(grouped).map((kat, index) => {
+            return {
+                namaKartu: kat,
+                temaWarna: warnaKategori[index % warnaKategori.length],
+                items: grouped[kat]
+            };
+        });
+    }
+
+    function toggleKartu(indexKartu) {
+        kartuTerbukaIndex = (kartuTerbukaIndex === indexKartu) ? null : indexKartu;
+        renderKartuMenu();
+    }
+
+    function renderKartuMenu() {
         let container = document.getElementById("kontainer_kartu_menu");
         if (!container) return;
 
-        if (daftarMenuServer.length === 0) {
+        if (daftarKartuMenu.length === 0) {
             container.innerHTML = `<p class="text-center text-xs text-gray-500 py-4">Tidak ada data menu tersedia.</p>`;
             return;
         }
 
-        let html = `<div class="grid grid-cols-1 gap-2 p-2">`;
+        let html = "";
 
-        daftarMenuServer.forEach((item, index) => {
-            let idInput = `qty_${index}`;
-            let stokReady = item.stok > 0;
+        daftarKartuMenu.forEach((kartu, indexKartu) => {
+            let idIsiKartu = `isi_kartu_${indexKartu}`;
+            let idPanahKartu = `panah_kartu_${indexKartu}`;
+            let isOpen = kartuTerbukaIndex === indexKartu;
 
             html += `
-                <div class="border border-gray-200 bg-white rounded-lg p-2.5 flex justify-between items-center shadow-xs ${!stokReady ? 'opacity-60' : ''}">
-                    <div class="flex-1 pr-2">
-                        <span class="font-bold text-xs text-gray-800 block">${item.produk}</span>
-                        <div class="flex items-center gap-2 mt-1">
-                            <span class="font-black text-xs text-amber-600">Rp ${item.harga.toLocaleString('id-ID')}</span>
-                            <span class="text-[9px] font-semibold px-1.5 py-0.5 rounded ${stokReady ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
-                                ${stokReady ? 'Stok: ' + item.stok + ' Porsi' : 'Stok Habis'}
-                            </span>
+                <div class="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden mb-2">
+                    <button type="button" onclick="toggleKartu(${indexKartu})" class="w-full ${kartu.temaWarna} px-3 py-2 flex justify-between items-center cursor-pointer select-none text-left font-bold">
+                        <h3 class="font-black text-xs tracking-wide">📦 ${kartu.namaKartu}</h3>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[9px] font-semibold bg-white/20 px-1.5 py-0.5 rounded-full">${kartu.items.length} opsi</span>
+                            <span id="${idPanahKartu}" class="text-xs font-bold">${isOpen ? '▲' : '▼'}</span>
+                        </div>
+                    </button>
+
+                    <div id="${idIsiKartu}" class="p-2 grid grid-cols-1 gap-2 ${isOpen ? '' : 'hidden'} border-t border-gray-100">
+            `;
+
+            kartu.items.forEach((item, indexItem) => {
+                let idInput = `qty_${indexKartu}_${indexItem}`;
+                let stokReady = item.stok > 0;
+
+                html += `
+                    <div class="border border-gray-200 bg-gray-50/50 rounded-lg p-2 flex flex-col justify-between hover:border-amber-300 transition ${!stokReady ? 'opacity-60' : ''}">
+                        <div>
+                            <div class="flex justify-between items-start gap-1">
+                                <span class="font-extrabold text-[11px] text-gray-800 block">${item.produk}</span>
+                            </div>
+                            <div class="mt-0.5 mb-1.5 flex justify-between items-center">
+                                <span class="font-black text-xs text-amber-600">Rp ${item.harga.toLocaleString('id-ID')}</span>
+                                <span class="text-[8px] font-bold ${stokReady ? 'text-gray-500' : 'text-red-500'}">Maks: ${item.stok} Porsi</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-1 mt-auto">
+                            ${stokReady ? `
+                                <div class="flex items-center bg-white border border-gray-300 rounded overflow-hidden h-6">
+                                    <button onclick="kurangQty('${idInput}')" type="button" class="px-2 h-full text-gray-700 font-black hover:bg-gray-100 text-[10px] cursor-pointer">-</button>
+                                    <input type="number" id="${idInput}" value="1" min="1" max="${item.stok}" readonly class="w-full text-center font-extrabold bg-white text-[10px] text-black border-none focus:outline-none">
+                                    <button onclick="tambahQty('${idInput}', ${item.stok})" type="button" class="px-2 h-full text-gray-700 font-black hover:bg-gray-100 text-[10px] cursor-pointer">+</button>
+                                </div>
+                                <button onclick="tambahKeKeranjang('${item.produk}', ${item.harga}, '${idInput}', ${item.stok})" type="button" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-black text-[9px] py-1.5 rounded shadow-xs cursor-pointer transition active:scale-95">
+                                    + KERANJANG
+                                </button>
+                            ` : `
+                                <div class="w-full bg-red-100 text-red-700 font-black text-[9px] py-1 rounded text-center border border-red-200 select-none">
+                                    🚫 STOK HABIS
+                                </div>
+                            `}
                         </div>
                     </div>
+                `;
+            });
 
-                    <div class="w-28 shrink-0 space-y-1">
-                        ${stokReady ? `
-                            <div class="flex items-center bg-white border border-gray-300 rounded overflow-hidden h-7">
-                                <button onclick="kurangQty('${idInput}')" type="button" class="px-2 h-full text-gray-700 font-black hover:bg-gray-100 text-xs cursor-pointer">-</button>
-                                <input type="number" id="${idInput}" value="1" min="1" max="${item.stok}" readonly class="w-full text-center font-extrabold bg-white text-xs text-black border-none focus:outline-none">
-                                <button onclick="tambahQty('${idInput}', ${item.stok})" type="button" class="px-2 h-full text-gray-700 font-black hover:bg-gray-100 text-xs cursor-pointer">+</button>
-                            </div>
-                            <button onclick="tambahKeKeranjang('${item.produk}', ${item.harga}, '${idInput}', ${item.stok})" type="button" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-black text-[10px] py-1.5 rounded shadow-xs cursor-pointer transition active:scale-95">
-                                + KERANJANG
-                            </button>
-                        ` : `
-                            <div class="w-full bg-red-100 text-red-700 font-black text-[9px] py-2 rounded text-center border border-red-200 select-none">
-                                🚫 HABIS
-                            </div>
-                        `}
-                    </div>
-                </div>
-            `;
+            html += `</div></div>`;
         });
 
-        html += `</div>`;
         container.innerHTML = html;
     }
 

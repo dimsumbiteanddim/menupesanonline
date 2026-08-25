@@ -237,6 +237,9 @@
             loadingEl.innerHTML = `<p class="text-center text-xs text-gray-500 py-4">⏳ Memuat data menu dari Spreadsheet...</p>`;
         }
 
+        // Buka kartu pertama hanya saat halaman awal direfresh manual
+        kartuTerbukaIndex = 0;
+
         fetch(urlWebApp + "?action=getStok&t=" + new Date().getTime())
             .then(res => res.json())
             .then(data => {
@@ -278,59 +281,56 @@
             .catch(err => console.log("Gagal sync live stok:", err));
     }
 
-   function kelompokkanMenu(rawMenu) {
-    let grouped = {};
+    function kelompokkanMenu(rawMenu) {
+        let grouped = {};
 
-    rawMenu.forEach(m => {
-        let nama = m.produk;
-        let lower = nama.toLowerCase();
-        let kategori = "Menu Lainnya";
+        rawMenu.forEach(m => {
+            let nama = m.produk;
+            let lower = nama.toLowerCase();
+            let kategori = "Menu Lainnya";
 
-        if (lower.includes("ngemil") || lower.includes("duo") || lower.includes("sultan") || lower.includes("sekeluarga")) {
-            kategori = "PAKET BUNDLING PROMO";
-        } else if (lower.includes("mentai")) {
-            kategori = "Dimsum Mentai";
-        } else if (lower.includes("keju")) {
-            kategori = "Dimsum Keju";
-        } else if (lower.includes("mix")) {
-            kategori = "Dimsum Mix";
-        } else if (lower.includes("goreng")) {
-            kategori = "Dimsum Goreng Paket";
-        } else if (lower.includes("tahu") || lower.includes("bakso")) {
-            kategori = "Tahu Bakso Goreng";
-        } else if (lower.includes("dimsum")) {
-            kategori = "Dimsum Original";
-        }
+            if (lower.includes("ngemil") || lower.includes("duo") || lower.includes("sultan") || lower.includes("sekeluarga")) {
+                kategori = "PAKET BUNDLING PROMO";
+            } else if (lower.includes("mentai")) {
+                kategori = "Dimsum Mentai";
+            } else if (lower.includes("keju")) {
+                kategori = "Dimsum Keju";
+            } else if (lower.includes("mix")) {
+                kategori = "Dimsum Mix";
+            } else if (lower.includes("goreng")) {
+                kategori = "Dimsum Goreng Paket";
+            } else if (lower.includes("tahu") || lower.includes("bakso")) {
+                kategori = "Tahu Bakso Goreng";
+            } else if (lower.includes("dimsum")) {
+                kategori = "Dimsum Original";
+            }
 
-        if (!grouped[kategori]) {
-            grouped[kategori] = [];
-        }
+            if (!grouped[kategori]) {
+                grouped[kategori] = [];
+            }
 
-        grouped[kategori].push(m);
-    });
+            grouped[kategori].push(m);
+        });
 
-    // 1. Ambil daftar nama kategori
-    let categories = Object.keys(grouped);
+        // 1. Ambil daftar nama kategori
+        let categories = Object.keys(grouped);
 
-    // 2. Urutkan: "PAKET BUNDLING PROMO" dipaksa berada di posisi paling depan (index 0)
-    categories.sort((a, b) => {
-        if (a === "PAKET BUNDLING PROMO") return -1;
-        if (b === "PAKET BUNDLING PROMO") return 1;
-        return 0;
-    });
+        // 2. Urutkan: "PAKET BUNDLING PROMO" dipaksa berada di posisi paling depan (index 0)
+        categories.sort((a, b) => {
+            if (a === "PAKET BUNDLING PROMO") return -1;
+            if (b === "PAKET BUNDLING PROMO") return 1;
+            return 0;
+        });
 
-    // 3. Susun array daftarKartuMenu sesuai urutan
-    daftarKartuMenu = categories.map((kat, index) => {
-        return {
-            namaKartu: kat,
-            temaWarna: warnaKategori[index % warnaKategori.length],
-            items: grouped[kat]
-        };
-    });
-
-    // 4. Set kartu pertama (index 0) agar langsung terbuka
-    kartuTerbukaIndex = 0;
-}
+        // 3. Susun array daftarKartuMenu sesuai urutan
+        daftarKartuMenu = categories.map((kat, index) => {
+            return {
+                namaKartu: kat,
+                temaWarna: warnaKategori[index % warnaKategori.length],
+                items: grouped[kat]
+            };
+        });
+    }
 
     function toggleKartu(indexKartu) {
         kartuTerbukaIndex = (kartuTerbukaIndex === indexKartu) ? null : indexKartu;
@@ -373,12 +373,12 @@
                 let idInput = `qty_${indexKartu}_${indexItem}`;
                 let stokReady = item.stok > 0;
 
-                // 1. TAMBAHAN: Format Harga Coret jika tersedia
+                // Format Harga Coret jika tersedia
                 let hargaCoretHTML = (item.hargaCoret && Number(item.hargaCoret) > 0)
                     ? `<span class="line-through text-gray-400 text-[10px] ml-1">Rp ${Number(item.hargaCoret).toLocaleString('id-ID')}</span>`
                     : '';
 
-                // 2. TAMBAHAN: Format Deskripsi / Keterangan jika tersedia
+                // Format Deskripsi / Keterangan jika tersedia
                 let deskripsiHTML = (item.deskripsi && item.deskripsi.trim() !== "")
                     ? `<div class="text-[9.5px] text-gray-500 leading-tight mt-0.5">${item.deskripsi}</div>`
                     : '';
@@ -388,7 +388,7 @@
                         <div class="flex justify-between items-start gap-2 mb-1">
                             <div>
                                 <span class="font-extrabold text-xs text-gray-800 leading-snug block">${item.produk}</span>
-                                ${deskripsiHTML} <!-- MENAMPILKAN DESKRIPSI -->
+                                ${deskripsiHTML}
                             </div>
                             <span class="text-[9px] font-bold px-2 py-0.5 rounded shrink-0 ${stokReady ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
                                 ${stokReady ? 'Stok: ' + item.stok : 'Habis'}
@@ -398,7 +398,7 @@
                         <div class="flex justify-between items-center gap-2 mt-2">
                             <div class="flex items-baseline">
                                 <span class="font-black text-xs text-amber-600">Rp ${item.harga.toLocaleString('id-ID')}</span>
-                                ${hargaCoretHTML} <!-- MENAMPILKAN HARGA CORET -->
+                                ${hargaCoretHTML}
                             </div>
 
                             <div class="w-28 shrink-0">

@@ -136,7 +136,7 @@
                     </div>
                 </div>
 
-                <!-- 🚚 DROPDOWN PILIHAN KURIR (KUSTOM) -->
+                <!-- 🚚 DROPDOWN PILIHAN KURIR -->
                 <div id="wrapper_kurir" class="hidden">
                     <label class="block text-[9px] font-bold text-gray-700 mb-0.5">Pilih Pengiriman / Kurir <span class="text-red-500">*</span></label>
                     <select id="pembeli_kurir" class="w-full border border-amber-400 p-1.5 rounded-lg text-[10px] font-bold bg-amber-50 text-gray-800 focus:outline-amber-500">
@@ -194,8 +194,15 @@
             <p>3. Pilih menu <b>QRIS / Scan</b>, lalu pilih ikon <b>Galeri/Upload Gambar</b>.</p>
         </div>
 
+        <!-- 📲 TOMBOL KONFIRMASI BUKTI TRANSFER KE WA TOKO -->
+        <a id="btn_wa_qris" href="https://wa.me/62887436033472?text=Halo%20Bite%20%26%20Dim,%20saya%20mau%20konfirmasi%20pembayaran%20QRIS" 
+           target="_blank" 
+           class="block bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 rounded-xl text-[10px] transition text-center shadow-xs">
+            📲 Kirim Bukti Transfer via WhatsApp
+        </a>
+
         <!-- TOMBOL SELESAIKAN -->
-        <button onclick="selesaikanPembayaranQris()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2.5 rounded-xl text-xs shadow-md transition active:scale-95 cursor-pointer">
+        <button onclick="selesaikanPembayaranQris()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-black py-2.5 rounded-xl text-xs shadow-md transition active:scale-95 cursor-pointer">
             ✅ Saya Sudah Transfer / Bayar
         </button>
     </div>
@@ -235,6 +242,13 @@
                 </div>
             </div>
 
+            <!-- 💬 TOMBOL HUBUNGI WA TOKO DI MODAL SUKSES -->
+            <a id="btn_wa_sukses" href="https://wa.me/6281234567890?text=Halo%20Bite%20%26%20Dim,%20saya%20sudah%20membuat%20pesanan." 
+               target="_blank" 
+               class="block bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 rounded-xl text-[10px] transition text-center shadow-xs">
+                💬 Hubungi WA Toko
+            </a>
+
             <!-- TOMBOL AKSI HIJAU -->
             <button onclick="tutupModal()" class="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-black py-3 rounded-xl text-xs shadow-lg shadow-emerald-600/30 cursor-pointer transition active:scale-95 flex items-center justify-center gap-2">
                 <span>Siap, Konfirmasi!</span>
@@ -246,6 +260,9 @@
 <!-- 🧠 SCRIPT LOGIKA APLIKASI -->
 <script>
     const urlWebApp = "https://script.google.com/macros/s/AKfycbxijavfFwCPC4BrH2-hYpZIN2tJuhfN4hmLo9eGRxKCkVnPGZXPF8CtXIqrzsNGUtOqmA/exec";
+
+    // 📞 NOMOR WHATSAPP TOKO (Ganti angka ini dengan nomor WA toko aktif Anda)
+    const NO_WA_TOKO = "62887436033472"; 
 
     let keranjang = [];
     let totalBelanja = 0;
@@ -276,7 +293,6 @@
             loadingEl.innerHTML = `<p class="text-center text-xs text-gray-500 py-4">⏳ Memuat data menu dari Spreadsheet...</p>`;
         }
 
-        // Buka kartu pertama hanya saat halaman awal direfresh manual
         kartuTerbukaIndex = 0;
 
         fetch(urlWebApp + "?action=getStok&t=" + new Date().getTime())
@@ -351,17 +367,14 @@
             grouped[kategori].push(m);
         });
 
-        // 1. Ambil daftar nama kategori
         let categories = Object.keys(grouped);
 
-        // 2. Urutkan: "PAKET BUNDLING PROMO" dipaksa berada di posisi paling depan (index 0)
         categories.sort((a, b) => {
             if (a === "PAKET BUNDLING PROMO") return -1;
             if (b === "PAKET BUNDLING PROMO") return 1;
             return 0;
         });
 
-        // 3. Susun array daftarKartuMenu sesuai urutan
         daftarKartuMenu = categories.map((kat, index) => {
             return {
                 namaKartu: kat,
@@ -412,12 +425,10 @@
                 let idInput = `qty_${indexKartu}_${indexItem}`;
                 let stokReady = item.stok > 0;
 
-                // Format Harga Coret jika tersedia
                 let hargaCoretHTML = (item.hargaCoret && Number(item.hargaCoret) > 0)
                     ? `<span class="line-through text-gray-400 text-[10px] ml-1">Rp ${Number(item.hargaCoret).toLocaleString('id-ID')}</span>`
                     : '';
 
-                // Format Deskripsi / Keterangan jika tersedia
                 let deskripsiHTML = (item.deskripsi && item.deskripsi.trim() !== "")
                     ? `<div class="text-[9.5px] text-gray-500 leading-tight mt-0.5">${item.deskripsi}</div>`
                     : '';
@@ -622,6 +633,11 @@
         document.getElementById("modal_opsi").innerText = `${infoTipeKurir} | ${bayar}`;
         document.getElementById("modal_total").innerText = "Rp " + totalBelanja.toLocaleString('id-ID');
 
+        // UPDATE LINK WA DENGAN DATA PELANGGAN
+        let teksPesanWA = encodeURIComponent(`Halo Bite & Dim, saya ${nama} mau konfirmasi pesanan (${infoTipeKurir}) senilai Rp ${totalBelanja.toLocaleString('id-ID')}.`);
+        document.getElementById("btn_wa_qris").href = `https://wa.me/${NO_WA_TOKO}?text=${teksPesanWA}`;
+        document.getElementById("btn_wa_sukses").href = `https://wa.me/${NO_WA_TOKO}?text=${teksPesanWA}`;
+
         // LOGIKA KELUARKAN MODAL
         if (bayar === "QRIS/Transfer") {
             document.getElementById("qris_total_bayar").innerText = "Total: Rp " + totalBelanja.toLocaleString('id-ID');
@@ -630,7 +646,6 @@
             document.getElementById("modal_sukses").classList.remove("hidden");
         }
 
-        // Buka App Kurir jika tipe pesanan Delivery
         if (tipe === "Delivery") {
             bukaAplikasiKurir(kurir);
         }

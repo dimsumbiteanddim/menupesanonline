@@ -122,7 +122,7 @@
                 <div class="grid grid-cols-2 gap-2 pt-0.5">
                     <div>
                         <label class="block text-[9px] font-bold text-gray-700 mb-0.5">Tipe Pesanan</label>
-                        <select id="pembeli_tipe" class="w-full border border-gray-300 p-1.5 rounded-lg text-[10px] font-bold bg-white text-gray-800">
+                        <select id="pembeli_tipe" onchange="togglePilihanKurir()" class="w-full border border-gray-300 p-1.5 rounded-lg text-[10px] font-bold bg-white text-gray-800">
                             <option value="Takeaway">Takeaway (Bawa Pulang)</option>
                             <option value="Delivery">Delivery (Kirim)</option>
                         </select>
@@ -134,6 +134,18 @@
                             <option value="Tunai/COD">Tunai / COD</option>
                         </select>
                     </div>
+                </div>
+
+                <!-- 🚚 DROPDOWN PILIHAN KURIR (KUSTOM) -->
+                <div id="wrapper_kurir" class="hidden">
+                    <label class="block text-[9px] font-bold text-gray-700 mb-0.5">Pilih Pengiriman / Kurir <span class="text-red-500">*</span></label>
+                    <select id="pembeli_kurir" class="w-full border border-amber-400 p-1.5 rounded-lg text-[10px] font-bold bg-amber-50 text-gray-800 focus:outline-amber-500">
+                        <option value="Kurir Toko / Internal">🛵 Kurir Internal / Toko</option>
+                        <option value="Gojek / GoSend (Instant/Sameday)">🟢 GoSend / Gojek</option>
+                        <option value="GrabExpress">🟢 GrabExpress</option>
+                        <option value="Maxim Delivery">🟡 Maxim Delivery</option>
+                        <option value="Pesan Sendiri oleh Pelanggan">📱 Pelanggan Pesan Kurir Sendiri</option>
+                    </select>
                 </div>
 
                 <div>
@@ -159,6 +171,33 @@
                 </button>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- 💳 MODAL PEMBAYARAN QRIS -->
+<div id="modal_qris" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden transition-opacity duration-300">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-4 space-y-3 text-center border border-amber-200 shadow-2xl relative">
+        <h3 class="text-sm font-black text-gray-800">Pembayaran QRIS</h3>
+        <p class="text-[10px] text-gray-500">Scan QRIS di bawah ini menggunakan M-Banking atau E-Wallet pilihan Anda:</p>
+
+        <!-- GAMBAR QRIS (Ganti src dengan URL/File Gambar QRIS Anda) -->
+        <div class="bg-amber-50 p-3 rounded-xl border border-amber-200 inline-block w-full">
+            <img src="https://via.placeholder.com/250x250.png?text=QRIS+Bite+%26+Dim" alt="QRIS Toko" class="w-48 h-48 object-contain mx-auto rounded-lg shadow-xs border border-gray-200">
+            <p id="qris_total_bayar" class="text-xs font-black text-amber-700 mt-2">Total: Rp 0</p>
+        </div>
+
+        <!-- PETUNJUK RINGKAS -->
+        <div class="bg-gray-50 p-2.5 rounded-lg text-left text-[9.5px] text-gray-600 space-y-1 border border-gray-200">
+            <p class="font-bold text-gray-800">💡 Petunjuk Pembayaran HP:</p>
+            <p>1. Screenshot / Tangkap layar kode QRIS di atas.</p>
+            <p>2. Buka M-Banking (BCA, Mandiri, BRI, Jago, dll) / E-Wallet (GoPay, Dana, dll).</p>
+            <p>3. Pilih menu <b>QRIS / Scan</b>, lalu pilih ikon <b>Galeri/Upload Gambar</b>.</p>
+        </div>
+
+        <!-- TOMBOL SELESAIKAN -->
+        <button onclick="selesaikanPembayaranQris()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2.5 rounded-xl text-xs shadow-md transition active:scale-95 cursor-pointer">
+            ✅ Saya Sudah Transfer / Bayar
+        </button>
     </div>
 </div>
 
@@ -198,7 +237,7 @@
 
             <!-- TOMBOL AKSI HIJAU -->
             <button onclick="tutupModal()" class="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-black py-3 rounded-xl text-xs shadow-lg shadow-emerald-600/30 cursor-pointer transition active:scale-95 flex items-center justify-center gap-2">
-                <span> siap, konfirmasi!</span>
+                <span>Siap, Konfirmasi!</span>
             </button>
         </div>
     </div>
@@ -504,6 +543,32 @@
         document.getElementById("jumlah_item_badge").innerText = totalQty + " Item";
     }
 
+    function togglePilihanKurir() {
+        let tipe = document.getElementById("pembeli_tipe").value;
+        let wrapperKurir = document.getElementById("wrapper_kurir");
+        
+        if (tipe === "Delivery") {
+            wrapperKurir.classList.remove("hidden");
+        } else {
+            wrapperKurir.classList.add("hidden");
+        }
+    }
+
+    function bukaAplikasiKurir(namaKurir) {
+        const linkKurir = {
+            "Gojek / GoSend (Instant/Sameday)": "gojek://",
+            "GrabExpress": "grab://",
+            "Maxim Delivery": "maxim://"
+        };
+
+        let targetLink = linkKurir[namaKurir];
+        if (targetLink) {
+            setTimeout(() => {
+                window.location.href = targetLink;
+            }, 1200);
+        }
+    }
+
     function prosesOrderPelanggan() {
         if (keranjang.length === 0) {
             alert("Keranjang masih kosong, Bro!");
@@ -514,6 +579,7 @@
         let hp = document.getElementById("pembeli_hp").value.trim();
         let tipe = document.getElementById("pembeli_tipe").value;
         let bayar = document.getElementById("pembeli_bayar").value;
+        let kurir = (tipe === "Delivery") ? document.getElementById("pembeli_kurir").value : "-";
         let catatan = document.getElementById("pembeli_catatan").value.trim();
 
         if (nama === "") {
@@ -531,6 +597,7 @@
             namaPelanggan: nama,
             nomorWA: hp,
             tipePesanan: tipe,
+            kurir: kurir,
             pembayaran: bayar,
             catatan: catatan,
             items: keranjang.map(i => ({ 
@@ -548,18 +615,38 @@
             sinkronkanStokDariSheets();
         }).catch(e => console.log("Gagal kirim data:", e));
 
+        let infoTipeKurir = (tipe === "Delivery") ? `${tipe} (${kurir})` : tipe;
+
         document.getElementById("modal_nama").innerText = nama;
         document.getElementById("modal_hp").innerText = hp;
-        document.getElementById("modal_opsi").innerText = `${tipe} | ${bayar}`;
+        document.getElementById("modal_opsi").innerText = `${infoTipeKurir} | ${bayar}`;
         document.getElementById("modal_total").innerText = "Rp " + totalBelanja.toLocaleString('id-ID');
 
-        document.getElementById("modal_sukses").classList.remove("hidden");
+        // LOGIKA KELUARKAN MODAL
+        if (bayar === "QRIS/Transfer") {
+            document.getElementById("qris_total_bayar").innerText = "Total: Rp " + totalBelanja.toLocaleString('id-ID');
+            document.getElementById("modal_qris").classList.remove("hidden");
+        } else {
+            document.getElementById("modal_sukses").classList.remove("hidden");
+        }
+
+        // Buka App Kurir jika tipe pesanan Delivery
+        if (tipe === "Delivery") {
+            bukaAplikasiKurir(kurir);
+        }
 
         keranjang = [];
         renderKeranjang();
         document.getElementById("pembeli_nama").value = "";
         document.getElementById("pembeli_hp").value = "";
         document.getElementById("pembeli_catatan").value = "";
+        document.getElementById("pembeli_tipe").value = "Takeaway";
+        togglePilihanKurir();
+    }
+
+    function selesaikanPembayaranQris() {
+        document.getElementById("modal_qris").classList.add("hidden");
+        document.getElementById("modal_sukses").classList.remove("hidden");
     }
 
     function tutupModal() {

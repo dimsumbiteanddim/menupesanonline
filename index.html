@@ -278,45 +278,59 @@
             .catch(err => console.log("Gagal sync live stok:", err));
     }
 
-    function kelompokkanMenu(rawMenu) {
-        let grouped = {};
+   function kelompokkanMenu(rawMenu) {
+    let grouped = {};
 
-        rawMenu.forEach(m => {
-            let nama = m.produk;
-            let lower = nama.toLowerCase();
-            let kategori = "Menu Lainnya";
+    rawMenu.forEach(m => {
+        let nama = m.produk;
+        let lower = nama.toLowerCase();
+        let kategori = "Menu Lainnya";
 
-            if (lower.includes("ngemil") || lower.includes("duo") || lower.includes("sultan") || lower.includes("sekeluarga")) {
-                kategori = "PAKET BUNDLING PROMO";
-            } else if (lower.includes("mentai")) {
-                kategori = "Dimsum Mentai";
-            } else if (lower.includes("keju")) {
-                kategori = "Dimsum Keju";
-            } else if (lower.includes("mix")) {
-                kategori = "Dimsum Mix";
-            } else if (lower.includes("goreng")) {
-                kategori = "Dimsum Goreng Paket";
-            } else if (lower.includes("tahu") || lower.includes("bakso")) {
-                kategori = "Tahu Bakso Goreng";
-            } else if (lower.includes("dimsum")) {
-                kategori = "Dimsum Original";
-            }
+        if (lower.includes("ngemil") || lower.includes("duo") || lower.includes("sultan") || lower.includes("sekeluarga")) {
+            kategori = "PAKET BUNDLING PROMO";
+        } else if (lower.includes("mentai")) {
+            kategori = "Dimsum Mentai";
+        } else if (lower.includes("keju")) {
+            kategori = "Dimsum Keju";
+        } else if (lower.includes("mix")) {
+            kategori = "Dimsum Mix";
+        } else if (lower.includes("goreng")) {
+            kategori = "Dimsum Goreng Paket";
+        } else if (lower.includes("tahu") || lower.includes("bakso")) {
+            kategori = "Tahu Bakso Goreng";
+        } else if (lower.includes("dimsum")) {
+            kategori = "Dimsum Original";
+        }
 
-            if (!grouped[kategori]) {
-                grouped[kategori] = [];
-            }
+        if (!grouped[kategori]) {
+            grouped[kategori] = [];
+        }
 
-            grouped[kategori].push(m);
-        });
+        grouped[kategori].push(m);
+    });
 
-        daftarKartuMenu = Object.keys(grouped).map((kat, index) => {
-            return {
-                namaKartu: kat,
-                temaWarna: warnaKategori[index % warnaKategori.length],
-                items: grouped[kat]
-            };
-        });
-    }
+    // 1. Ambil daftar nama kategori
+    let categories = Object.keys(grouped);
+
+    // 2. Urutkan: "PAKET BUNDLING PROMO" dipaksa berada di posisi paling depan (index 0)
+    categories.sort((a, b) => {
+        if (a === "PAKET BUNDLING PROMO") return -1;
+        if (b === "PAKET BUNDLING PROMO") return 1;
+        return 0;
+    });
+
+    // 3. Susun array daftarKartuMenu sesuai urutan
+    daftarKartuMenu = categories.map((kat, index) => {
+        return {
+            namaKartu: kat,
+            temaWarna: warnaKategori[index % warnaKategori.length],
+            items: grouped[kat]
+        };
+    });
+
+    // 4. Set kartu pertama (index 0) agar langsung terbuka
+    kartuTerbukaIndex = 0;
+}
 
     function toggleKartu(indexKartu) {
         kartuTerbukaIndex = (kartuTerbukaIndex === indexKartu) ? null : indexKartu;

@@ -373,17 +373,33 @@
                 let idInput = `qty_${indexKartu}_${indexItem}`;
                 let stokReady = item.stok > 0;
 
+                // 1. TAMBAHAN: Format Harga Coret jika tersedia
+                let hargaCoretHTML = (item.hargaCoret && Number(item.hargaCoret) > 0)
+                    ? `<span class="line-through text-gray-400 text-[10px] ml-1">Rp ${Number(item.hargaCoret).toLocaleString('id-ID')}</span>`
+                    : '';
+
+                // 2. TAMBAHAN: Format Deskripsi / Keterangan jika tersedia
+                let deskripsiHTML = (item.deskripsi && item.deskripsi.trim() !== "")
+                    ? `<div class="text-[9.5px] text-gray-500 leading-tight mt-0.5">${item.deskripsi}</div>`
+                    : '';
+
                 html += `
                     <div class="bg-white border border-gray-200 rounded-lg p-2.5 shadow-xs hover:border-amber-400 transition ${!stokReady ? 'opacity-60' : ''}">
-                        <div class="flex justify-between items-start gap-2 mb-2">
-                            <span class="font-extrabold text-xs text-gray-800 leading-snug">${item.produk}</span>
+                        <div class="flex justify-between items-start gap-2 mb-1">
+                            <div>
+                                <span class="font-extrabold text-xs text-gray-800 leading-snug block">${item.produk}</span>
+                                ${deskripsiHTML} <!-- MENAMPILKAN DESKRIPSI -->
+                            </div>
                             <span class="text-[9px] font-bold px-2 py-0.5 rounded shrink-0 ${stokReady ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
                                 ${stokReady ? 'Stok: ' + item.stok : 'Habis'}
                             </span>
                         </div>
 
-                        <div class="flex justify-between items-center gap-2">
-                            <span class="font-black text-xs text-amber-600">Rp ${item.harga.toLocaleString('id-ID')}</span>
+                        <div class="flex justify-between items-center gap-2 mt-2">
+                            <div class="flex items-baseline">
+                                <span class="font-black text-xs text-amber-600">Rp ${item.harga.toLocaleString('id-ID')}</span>
+                                ${hargaCoretHTML} <!-- MENAMPILKAN HARGA CORET -->
+                            </div>
 
                             <div class="w-28 shrink-0">
                                 ${stokReady ? `

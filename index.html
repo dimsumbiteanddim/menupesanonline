@@ -412,18 +412,25 @@
             let idPanahKartu = `panah_kartu_${indexKartu}`;
             let isOpen = kartuTerbukaIndex === indexKartu;
 
+            // Ganti baris pembungkus kartu dari:
+// <div class="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
+// Menjadi:
+<div class="rounded-2xl overflow-hidden shadow-xs border border-gray-200/60 bg-white">
+
             html += `
                 <div class="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
-                    <button type="button" onclick="toggleKartu(${indexKartu})" class="w-full ${kartu.temaWarna} px-3 py-2 flex justify-between items-center cursor-pointer select-none text-left transition hover:brightness-95">
-                        <h3 class="font-black text-xs tracking-wide flex items-center gap-1.5">
-                            <span>📦</span>
-                            <span>${kartu.namaKartu}</span>
-                        </h3>
-                        <div class="flex items-center gap-2">
-                            <span class="text-[9px] font-bold bg-black/20 px-2 py-0.5 rounded-full">${kartu.items.length} opsi</span>
-                            <span id="${idPanahKartu}" class="text-xs font-black">${isOpen ? '▲' : '▼'}</span>
-                        </div>
-                    </button>
+                    <button type="button" onclick="toggleKartu(${indexKartu})" class="w-full ${kartu.temaWarna} px-4 py-2.5 rounded-2xl flex justify-between items-center cursor-pointer select-none text-left shadow-xs transition active:scale-[0.98]">
+    <!-- Sisi Kiri: Icon & Nama Kategori -->
+    <h3 class="font-bold text-xs tracking-wide leading-tight flex items-center gap-2 pr-2">
+        <span>${kartu.namaKartu}</span>
+    </h3>
+    
+    <!-- Sisi Kanan: Jumlah Opsi & Panah -->
+    <div class="flex items-center gap-1.5 shrink-0 text-right">
+        <span class="text-[11px] font-semibold opacity-95 whitespace-nowrap">${kartu.items.length} opsi</span>
+        <span id="${idPanahKartu}" class="text-[10px] font-bold opacity-80">${isOpen ? '▲' : '▼'}</span>
+    </div>
+</button>
 
                     <div id="${idIsiKartu}" class="p-2.5 space-y-2 ${isOpen ? '' : 'hidden'} bg-gray-50/50 border-t border-gray-100">
             `;

@@ -339,25 +339,8 @@
         let grouped = {};
 
         rawMenu.forEach(m => {
-            let nama = m.produk;
-            let lower = nama.toLowerCase();
-            let kategori = "Menu Lainnya";
-
-            if (lower.includes("ngemil") || lower.includes("duo") || lower.includes("sultan") || lower.includes("sekeluarga")) {
-                kategori = "PAKET BUNDLING PROMO";
-            } else if (lower.includes("mentai")) {
-                kategori = "Dimsum Mentai";
-            } else if (lower.includes("keju")) {
-                kategori = "Dimsum Keju";
-            } else if (lower.includes("mix")) {
-                kategori = "Dimsum Mix";
-            } else if (lower.includes("goreng")) {
-                kategori = "Dimsum Goreng Paket";
-            } else if (lower.includes("tahu") || lower.includes("bakso")) {
-                kategori = "Tahu Bakso Goreng";
-            } else if (lower.includes("dimsum")) {
-                kategori = "Dimsum Original";
-            }
+            // Gunakan kategori asli dari Google Sheets/Apps Script
+            let kategori = m.kategori || "Menu Lainnya";
 
             if (!grouped[kategori]) {
                 grouped[kategori] = [];
@@ -368,9 +351,10 @@
 
         let categories = Object.keys(grouped);
 
+        // Pengurutan agar "PAKET BUNDLING PROMO" selalu tampil paling atas
         categories.sort((a, b) => {
-            if (a === "PAKET BUNDLING PROMO") return -1;
-            if (b === "PAKET BUNDLING PROMO") return 1;
+            if (a.toUpperCase().includes("PAKET BUNDLING")) return -1;
+            if (b.toUpperCase().includes("PAKET BUNDLING")) return 1;
             return 0;
         });
 

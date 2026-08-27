@@ -299,15 +299,14 @@
         cekJamOperasional();
         loadData();
         setInterval(sinkronkanStokDariSheets, 5000);
-        setInterval(cekJamOperasional, 60000); // Cek ulang status jam operasional setiap 1 menit
+        setInterval(cekJamOperasional, 60000);
     };
 
     function cekJamOperasional() {
         let sekarang = new Date();
-        let hari = sekarang.getDay(); // 0 = Minggu, 1 = Senin, ..., 6 = Sabtu
+        let hari = sekarang.getDay();
         let jam = sekarang.getHours();
 
-        // Syarat Buka: Senin-Sabtu (hari 1-6) DAN jam 14:00 - 20:59
         if (hari !== 0 && jam >= JAM_BUKA && jam < JAM_TUTUP) {
             tokoBuka = true;
             updateModulToko(true, `BUKA (${JAM_BUKA}:00 - ${JAM_TUTUP}:00)`);
@@ -317,7 +316,6 @@
             updateModulToko(false, pesanTutup);
         }
 
-        // Kunci atau aktifkan tombol checkout utama
         let btnCheckout = document.getElementById("btn_checkout");
         if (btnCheckout) {
             if (tokoBuka) {
@@ -513,28 +511,26 @@
                                 ${hargaCoretHTML}
                             </div>
 
-                          <div class="w-28 shrink-0">
-    ${
-        !tokoBuka 
-        ? `<div class="w-full bg-gray-200 text-gray-600 font-black text-[9px] py-1.5 rounded text-center border border-gray-300 select-none">
-                🔒 TOKO TUTUP
-           </div>`
-        : stokReady 
-        ? `<div class="space-y-1">
-                <div class="flex items-center bg-gray-50 border border-gray-300 rounded overflow-hidden h-6">
-                    <button onclick="kurangQty('${idInput}')" type="button" class="px-2 h-full text-gray-700 font-black hover:bg-gray-200 text-xs cursor-pointer">-</button>
-                    <input type="number" id="${idInput}" value="1" min="1" max="${item.stok}" readonly class="w-full text-center font-extrabold bg-transparent text-[10px] text-black border-none focus:outline-none">
-                    <button onclick="tambahQty('${idInput}', ${item.stok})" type="button" class="px-2 h-full text-gray-700 font-black hover:bg-gray-200 text-xs cursor-pointer">+</button>
-                </div>
-                <button onclick="tambahKeKeranjang('${item.produk}', ${item.harga}, '${idInput}', ${item.stok})" type="button" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-black text-[9px] py-1 rounded shadow-xs cursor-pointer transition active:scale-95">
-                    + KERANJANG
-                </button>
-           </div>`
-        : `<div class="w-full bg-red-100 text-red-700 font-black text-[9px] py-1 rounded text-center border border-red-200 select-none">
-                🚫 HABIS
-           </div>`
-    }
-</div>
+                            <div class="w-28 shrink-0">
+                                ${!tokoBuka ? `
+                                    <div class="w-full bg-gray-200 text-gray-600 font-black text-[9px] py-1.5 rounded text-center border border-gray-300 select-none">
+                                        🔒 TOKO TUTUP
+                                    </div>
+                                ` : stokReady ? `
+                                    <div class="space-y-1">
+                                        <div class="flex items-center bg-gray-50 border border-gray-300 rounded overflow-hidden h-6">
+                                            <button onclick="kurangQty('${idInput}')" type="button" class="px-2 h-full text-gray-700 font-black hover:bg-gray-200 text-xs cursor-pointer">-</button>
+                                            <input type="number" id="${idInput}" value="1" min="1" max="${item.stok}" readonly class="w-full text-center font-extrabold bg-transparent text-[10px] text-black border-none focus:outline-none">
+                                            <button onclick="tambahQty('${idInput}', ${item.stok})" type="button" class="px-2 h-full text-gray-700 font-black hover:bg-gray-200 text-xs cursor-pointer">+</button>
+                                        </div>
+                                        <button onclick="tambahKeKeranjang(\`${item.produk.replace(/`/g, '')}\`, ${item.harga}, '${idInput}', ${item.stok})" type="button" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-black text-[9px] py-1 rounded shadow-xs cursor-pointer transition active:scale-95">
+                                            + KERANJANG
+                                        </button>
+                                    </div>
+                                ` : `
+                                    <div class="w-full bg-red-100 text-red-700 font-black text-[9px] py-1 rounded text-center border border-red-200 select-none">
+                                        🚫 HABIS
+                                    </div>
                                 `}
                             </div>
                         </div>

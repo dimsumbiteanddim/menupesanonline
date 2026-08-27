@@ -466,12 +466,12 @@
             let isOpen = kartuTerbukaIndex === indexKartu;
 
             html += `
-                <button type="button" onclick="toggleKartu(${indexKartu})" class="w-full ${kartu.temaWarna} px-4 py-3 flex justify-between items-center cursor-pointer select-none text-left shadow-xs transition active:scale-[0.98]">
-                        <h3 class="font-bold text-xs tracking-wide leading-normal flex items-center gap-2 pr-2 py-0.5">
+                <button type="button" onclick="toggleKartu(${indexKartu})" class="w-full ${kartu.temaWarna} px-5 py-3.5 flex justify-between items-center cursor-pointer select-none text-left shadow-xs transition active:scale-[0.98]">
+                        <h3 class="font-bold text-xs tracking-wide leading-normal flex items-center gap-2 pl-1 pr-3 py-0.5">
                             <span>${kartu.namaKartu}</span>
                         </h3>
                         
-                        <div class="flex items-center gap-1.5 shrink-0 text-right">
+                        <div class="flex items-center gap-1.5 shrink-0 text-right pr-1">
                             <span class="text-[11px] font-semibold opacity-95 whitespace-nowrap">${kartu.items.length} opsi</span>
                             <span id="${idPanahKartu}" class="text-[10px] font-bold opacity-80">${isOpen ? '▲' : '▼'}</span>
                         </div>

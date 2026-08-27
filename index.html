@@ -513,26 +513,28 @@
                                 ${hargaCoretHTML}
                             </div>
 
-                            <div class="w-28 shrink-0">
-                                ${!tokoBuka ? `
-                                    <div class="w-full bg-gray-200 text-gray-600 font-black text-[9px] py-1.5 rounded text-center border border-gray-300 select-none">
-                                        🔒 TOKO TUTUP
-                                    </div>
-                                ` : stokReady ? `
-                                    <div class="space-y-1">
-                                        <div class="flex items-center bg-gray-50 border border-gray-300 rounded overflow-hidden h-6">
-                                            <button onclick="kurangQty('${idInput}')" type="button" class="px-2 h-full text-gray-700 font-black hover:bg-gray-200 text-xs cursor-pointer">-</button>
-                                            <input type="number" id="${idInput}" value="1" min="1" max="${item.stok}" readonly class="w-full text-center font-extrabold bg-transparent text-[10px] text-black border-none focus:outline-none">
-                                            <button onclick="tambahQty('${idInput}', ${item.stok})" type="button" class="px-2 h-full text-gray-700 font-black hover:bg-gray-200 text-xs cursor-pointer">+</button>
-                                        </div>
-                                        <button onclick="tambahKeKeranjang('${item.produk}', ${item.harga}, '${idInput}', ${item.stok})" type="button" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-black text-[9px] py-1 rounded shadow-xs cursor-pointer transition active:scale-95">
-                                            + KERANJANG
-                                        </button>
-                                    </div>
-                                ` : `
-                                    <div class="w-full bg-red-100 text-red-700 font-black text-[9px] py-1 rounded text-center border border-red-200 select-none">
-                                        🚫 HABIS
-                                    </div>
+                          <div class="w-28 shrink-0">
+    ${
+        !tokoBuka 
+        ? `<div class="w-full bg-gray-200 text-gray-600 font-black text-[9px] py-1.5 rounded text-center border border-gray-300 select-none">
+                🔒 TOKO TUTUP
+           </div>`
+        : stokReady 
+        ? `<div class="space-y-1">
+                <div class="flex items-center bg-gray-50 border border-gray-300 rounded overflow-hidden h-6">
+                    <button onclick="kurangQty('${idInput}')" type="button" class="px-2 h-full text-gray-700 font-black hover:bg-gray-200 text-xs cursor-pointer">-</button>
+                    <input type="number" id="${idInput}" value="1" min="1" max="${item.stok}" readonly class="w-full text-center font-extrabold bg-transparent text-[10px] text-black border-none focus:outline-none">
+                    <button onclick="tambahQty('${idInput}', ${item.stok})" type="button" class="px-2 h-full text-gray-700 font-black hover:bg-gray-200 text-xs cursor-pointer">+</button>
+                </div>
+                <button onclick="tambahKeKeranjang('${item.produk}', ${item.harga}, '${idInput}', ${item.stok})" type="button" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-black text-[9px] py-1 rounded shadow-xs cursor-pointer transition active:scale-95">
+                    + KERANJANG
+                </button>
+           </div>`
+        : `<div class="w-full bg-red-100 text-red-700 font-black text-[9px] py-1 rounded text-center border border-red-200 select-none">
+                🚫 HABIS
+           </div>`
+    }
+</div>
                                 `}
                             </div>
                         </div>

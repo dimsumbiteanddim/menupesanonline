@@ -309,7 +309,7 @@
 
         if (hari !== 0 && jam >= JAM_BUKA && jam < JAM_TUTUP) {
             tokoBuka = true;
-            updateModulToko(true, `BUKA (${JAM_BUKA}:00 - ${JAM_TUTUP}:00)`);
+            updateModulToko(true,"SENIN - SABTU" `BUKA (${JAM_BUKA}:00 - ${JAM_TUTUP}:00)`);
         } else {
             tokoBuka = false;
             let pesanTutup = (hari === 0) ? "LIBUR (HARI MINGGU)" : `TUTUP (${JAM_BUKA}:00 - ${JAM_TUTUP}:00)`;

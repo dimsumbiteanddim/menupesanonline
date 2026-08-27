@@ -356,7 +356,10 @@
         kartuTerbukaIndex = 0;
 
         fetch(urlWebApp + "?action=getStok&t=" + new Date().getTime())
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) throw new Error("HTTP error " + res.status);
+                return res.json();
+            })
             .then(data => {
                 if (data) {
                     if (data.stokDimsumPcs !== undefined) {
@@ -376,14 +379,22 @@
             })
             .catch(err => {
                 console.error("Gagal memuat data:", err);
-                document.getElementById("kontainer_kartu_menu").innerHTML = 
-                    `<p class="text-center text-xs text-red-500 py-4">❌ Gagal mengambil data menu dari server.</p>`;
+                let container = document.getElementById("kontainer_kartu_menu");
+                if (container) {
+                    container.innerHTML = 
+                        `<div class="p-3 text-center bg-red-50 text-red-600 rounded-lg text-xs border border-red-200">
+                            ⚠️ Gagal memuat data (Error 404/API). Pastikan URL WebApp Google Apps Script aktif dan publik.
+                        </div>`;
+                }
             });
     }
 
     function sinkronkanStokDariSheets() {
         fetch(urlWebApp + "?action=getStok&t=" + new Date().getTime())
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) throw new Error("HTTP Error " + res.status);
+                return res.json();
+            })
             .then(data => {
                 if (data && data.menu && Array.isArray(data.menu)) {
                     stokDapurPcs.dimsum = parseInt(data.stokDimsumPcs || 0);
@@ -398,6 +409,11 @@
 
     function kelompokkanMenu(rawMenu) {
         let grouped = {};
+
+        if (!Array.isArray(rawMenu)) {
+            daftarKartuMenu = [];
+            return;
+        }
 
         rawMenu.forEach(m => {
             let nama = m.produk || "";
@@ -435,11 +451,12 @@
             return 0;
         });
 
+        // 🛡️ PERBAIKAN PENTING: Penanganan Safe Access pada grouped[kat] agar tidak crash di baris 385
         daftarKartuMenu = categories.map((kat, index) => {
             return {
                 namaKartu: kat,
                 temaWarna: warnaKategori[index % warnaKategori.length],
-                items: grouped[kat]
+                items: (grouped && grouped[kat]) ? grouped[kat] : []
             };
         });
     }
@@ -453,7 +470,7 @@
         let container = document.getElementById("kontainer_kartu_menu");
         if (!container) return;
 
-        if (daftarKartuMenu.length === 0) {
+        if (!daftarKartuMenu || daftarKartuMenu.length === 0) {
             container.innerHTML = `<p class="text-center text-xs text-gray-500 py-4">Tidak ada data menu tersedia.</p>`;
             return;
         }
@@ -506,7 +523,7 @@
 
                         <div class="flex justify-between items-center gap-2 mt-2">
                             <div class="flex items-baseline">
-                                <span class="font-black text-xs text-amber-600">Rp ${item.harga.toLocaleString('id-ID')}</span>
+                                <span class="font-black text-xs text-amber-600">Rp ${Number(item.harga || 0).toLocaleString('id-ID')}</span>
                                 ${hargaCoretHTML}
                             </div>
 

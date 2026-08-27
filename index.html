@@ -177,13 +177,13 @@
         <h3 class="text-sm font-black text-gray-800">Pembayaran QRIS</h3>
         <p class="text-[10px] text-gray-500">Scan QRIS di bawah ini menggunakan M-Banking atau E-Wallet pilihan Anda:</p>
 
-        <!-- GAMBAR QRIS (Ganti src dengan URL/File Gambar QRIS Anda) -->
-       <div class="bg-amber-50 p-3 rounded-xl border border-amber-200 w-full flex flex-col items-center justify-center text-center">
-    <img src="https://lh3.googleusercontent.com/d/1_N38UgZgpj6zno0LGjQj74vHk4xh7x_Q" 
-         alt="QRIS Toko" 
-         class="w-48 h-48 object-contain rounded-lg shadow-xs border border-gray-200">
-    <p id="qris_total_bayar" class="text-xs font-black text-amber-700 mt-2">Total: Rp 0</p>
-</div>
+        <!-- GAMBAR QRIS -->
+        <div class="bg-amber-50 p-3 rounded-xl border border-amber-200 w-full flex flex-col items-center justify-center text-center">
+            <img src="https://lh3.googleusercontent.com/d/1_N38UgZgpj6zno0LGjQj74vHk4xh7x_Q" 
+                 alt="QRIS Toko" 
+                 class="w-48 h-48 object-contain rounded-lg shadow-xs border border-gray-200">
+            <p id="qris_total_bayar" class="text-xs font-black text-amber-700 mt-2">Total: Rp 0</p>
+        </div>
 
         <!-- PETUNJUK RINGKAS -->
         <div class="bg-gray-50 p-2.5 rounded-lg text-left text-[9.5px] text-gray-600 space-y-1 border border-gray-200">
@@ -207,7 +207,7 @@
     </div>
 </div>
 
-<!-- 📢 MODAL NOTIFIKASI PESANAN BERHASIL (GREEN THEME PROFESSIONAL) -->
+<!-- 📢 MODAL NOTIFIKASI PESANAN BERHASIL -->
 <div id="modal_sukses" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden transition-opacity duration-300">
     <div class="bg-white rounded-2xl max-w-sm w-full overflow-hidden shadow-2xl transform transition-all border border-emerald-100">
         
@@ -260,7 +260,7 @@
 <script>
     const urlWebApp = "https://script.google.com/macros/s/AKfycbxijavfFwCPC4BrH2-hYpZIN2tJuhfN4hmLo9eGRxKCkVnPGZXPF8CtXIqrzsNGUtOqmA/exec";
 
-    // 📞 NOMOR WHATSAPP TOKO (Ganti angka ini dengan nomor WA toko aktif Anda)
+    // 📞 NOMOR WHATSAPP TOKO
     const NO_WA_TOKO = "62887436033472"; 
 
     let keranjang = [];
@@ -335,7 +335,7 @@
             .catch(err => console.log("Gagal sync live stok:", err));
     }
 
-   function kelompokkanMenu(rawMenu) {
+    function kelompokkanMenu(rawMenu) {
         let grouped = {};
 
         rawMenu.forEach(m => {
@@ -343,20 +343,13 @@
             let lower = nama.toLowerCase();
             let kategori = "Menu Lainnya";
 
-            // 1. Prioritas Utama: Bundling Promo
             if (lower.includes("ngemil") || lower.includes("duo") || lower.includes("sultan") || lower.includes("sekeluarga")) {
                 kategori = "PAKET BUNDLING PROMO";
-            }
-            // 2. Prioritas Kedua: Tahu Bakso
-            else if (lower.includes("tahu") || lower.includes("bakso")) {
+            } else if (lower.includes("tahu") || lower.includes("bakso")) {
                 kategori = "Tahu Bakso Goreng";
-            }
-            // 3. Prioritas Ketiga: Semua Gorengan (Termasuk Dimsum Goreng Mentai)
-            else if (lower.includes("goreng")) {
+            } else if (lower.includes("goreng")) {
                 kategori = "Dimsum Goreng Paket";
-            }
-            // 4. Prioritas Keempat: Dimsum Kukus Varian Rasa
-            else if (lower.includes("mentai")) {
+            } else if (lower.includes("mentai")) {
                 kategori = "Dimsum Mentai";
             } else if (lower.includes("keju")) {
                 kategori = "Dimsum Keju";
@@ -375,7 +368,6 @@
 
         let categories = Object.keys(grouped);
 
-        // Urutkan agar PAKET BUNDLING PROMO selalu paling atas
         categories.sort((a, b) => {
             if (a === "PAKET BUNDLING PROMO") return -1;
             if (b === "PAKET BUNDLING PROMO") return 1;
@@ -412,25 +404,20 @@
             let idPanahKartu = `panah_kartu_${indexKartu}`;
             let isOpen = kartuTerbukaIndex === indexKartu;
 
-            // Ganti baris pembungkus kartu dari:
-// <div class="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
-// Menjadi:
-<div class="rounded-2xl overflow-hidden shadow-xs border border-gray-200/60 bg-white">
-
             html += `
-                <div class="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
-                    <button type="button" onclick="toggleKartu(${indexKartu})" class="w-full ${kartu.temaWarna} px-4 py-2.5 rounded-2xl flex justify-between items-center cursor-pointer select-none text-left shadow-xs transition active:scale-[0.98]">
-    <!-- Sisi Kiri: Icon & Nama Kategori -->
-    <h3 class="font-bold text-xs tracking-wide leading-tight flex items-center gap-2 pr-2">
-        <span>${kartu.namaKartu}</span>
-    </h3>
-    
-    <!-- Sisi Kanan: Jumlah Opsi & Panah -->
-    <div class="flex items-center gap-1.5 shrink-0 text-right">
-        <span class="text-[11px] font-semibold opacity-95 whitespace-nowrap">${kartu.items.length} opsi</span>
-        <span id="${idPanahKartu}" class="text-[10px] font-bold opacity-80">${isOpen ? '▲' : '▼'}</span>
-    </div>
-</button>
+                <div class="rounded-2xl overflow-hidden shadow-xs border border-gray-200/60 bg-white">
+                    <button type="button" onclick="toggleKartu(${indexKartu})" class="w-full ${kartu.temaWarna} px-4 py-2.5 flex justify-between items-center cursor-pointer select-none text-left shadow-xs transition active:scale-[0.98]">
+                        <!-- Sisi Kiri: Nama Kategori -->
+                        <h3 class="font-bold text-xs tracking-wide leading-tight flex items-center gap-2 pr-2">
+                            <span>${kartu.namaKartu}</span>
+                        </h3>
+                        
+                        <!-- Sisi Kanan: Jumlah Opsi & Panah -->
+                        <div class="flex items-center gap-1.5 shrink-0 text-right">
+                            <span class="text-[11px] font-semibold opacity-95 whitespace-nowrap">${kartu.items.length} opsi</span>
+                            <span id="${idPanahKartu}" class="text-[10px] font-bold opacity-80">${isOpen ? '▲' : '▼'}</span>
+                        </div>
+                    </button>
 
                     <div id="${idIsiKartu}" class="p-2.5 space-y-2 ${isOpen ? '' : 'hidden'} bg-gray-50/50 border-t border-gray-100">
             `;
@@ -647,12 +634,10 @@
         document.getElementById("modal_opsi").innerText = `${infoTipeKurir} | ${bayar}`;
         document.getElementById("modal_total").innerText = "Rp " + totalBelanja.toLocaleString('id-ID');
 
-        // UPDATE LINK WA DENGAN DATA PELANGGAN
         let teksPesanWA = encodeURIComponent(`Halo Bite & Dim, saya ${nama} mau konfirmasi pesanan (${infoTipeKurir}) senilai Rp ${totalBelanja.toLocaleString('id-ID')}.`);
         document.getElementById("btn_wa_qris").href = `https://wa.me/${NO_WA_TOKO}?text=${teksPesanWA}`;
         document.getElementById("btn_wa_sukses").href = `https://wa.me/${NO_WA_TOKO}?text=${teksPesanWA}`;
 
-        // LOGIKA KELUARKAN MODAL
         if (bayar === "QRIS/Transfer") {
             document.getElementById("qris_total_bayar").innerText = "Total: Rp " + totalBelanja.toLocaleString('id-ID');
             document.getElementById("modal_qris").classList.remove("hidden");

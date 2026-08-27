@@ -67,8 +67,17 @@
     </div>
   </div>
 
-  <div id="loading_status" class="text-[10px] text-amber-400 font-bold flex items-center gap-1.5 bg-[#1a252f] px-2.5 py-1 rounded-md">
-    <span class="w-2 h-2 rounded-full bg-green-500 animate-ping"></span> Live Sync Dapur
+  <!-- STATUS JAM OPERASIONAL & LIVE SYNC -->
+  <div class="flex items-center gap-1.5 flex-wrap">
+    <!-- Status Buka / Tutup Toko -->
+    <div id="status_toko" class="text-[10px] font-bold px-2.5 py-1 rounded-md flex items-center gap-1.5 shadow-xs transition-all">
+      <span id="indikator_toko" class="w-2 h-2 rounded-full"></span>
+      <span id="teks_toko">Cek jam operasional...</span>
+    </div>
+
+    <div id="loading_status" class="text-[10px] text-amber-400 font-bold flex items-center gap-1.5 bg-[#1a252f] px-2.5 py-1 rounded-md">
+      <span class="w-2 h-2 rounded-full bg-green-500 animate-ping"></span> Live Sync Dapur
+    </div>
   </div>
 </header>
 
@@ -163,7 +172,7 @@
                     <span id="total_belanja" class="text-amber-600 font-extrabold text-sm">Rp 0</span>
                 </div>
 
-                <button onclick="prosesOrderPelanggan()" class="w-full bg-green-600 hover:bg-green-700 text-white font-black py-2.5 rounded-lg text-[11px] shadow-xs cursor-pointer text-center flex items-center justify-center gap-1.5 transition active:scale-95">
+                <button id="btn_checkout" onclick="prosesOrderPelanggan()" class="w-full bg-green-600 hover:bg-green-700 text-white font-black py-2.5 rounded-lg text-[11px] shadow-xs cursor-pointer text-center flex items-center justify-center gap-1.5 transition active:scale-95">
                     ✅ SELESAIKAN PESANAN
                 </button>
             </div>
@@ -258,10 +267,15 @@
 
 <!-- 🧠 SCRIPT LOGIKA APLIKASI -->
 <script>
-    const urlWebApp = "https://script.google.com/macros/s/AKfycbxijavfFwCPC4BrH2-hYpZIN2tJuhfN4hmLo9eGRxKCkVnPGZXPF8CtXIqrzsNGUtOqmA/exec";
+    const urlWebApp = "https://script.google.com/macros/s/AKfycbxijavfFwCPC4BrH2-hYpZIN2tJuhfN4hmLo9eGRxKCkVnPGZXPF8CtXIqrzsNGUtOqmA/exec";[cite: 3]
 
     // 📞 NOMOR WHATSAPP TOKO
     const NO_WA_TOKO = "62887436033472"; 
+
+    // ⏰ KONFIGURASI JAM OPERASIONAL KEDAI
+    const JAM_BUKA = 14;  // 14:00 WITA
+    const JAM_TUTUP = 21; // 21:00 WITA
+    let tokoBuka = false;
 
     let keranjang = [];
     let totalBelanja = 0;
@@ -282,9 +296,58 @@
     ];
 
     window.onload = function() {
+        cekJamOperasional();
         loadData();
         setInterval(sinkronkanStokDariSheets, 5000);
+        setInterval(cekJamOperasional, 60000); // Cek ulang status jam operasional setiap 1 menit
     };
+
+    function cekJamOperasional() {
+        let sekarang = new Date();
+        let hari = sekarang.getDay(); // 0 = Minggu, 1 = Senin, ..., 6 = Sabtu
+        let jam = sekarang.getHours();
+
+        // Syarat Buka: Senin-Sabtu (hari 1-6) DAN jam 14:00 - 20:59
+        if (hari !== 0 && jam >= JAM_BUKA && jam < JAM_TUTUP) {
+            tokoBuka = true;
+            updateModulToko(true, `BUKA (${JAM_BUKA}:00 - ${JAM_TUTUP}:00)`);
+        } else {
+            tokoBuka = false;
+            let pesanTutup = (hari === 0) ? "LIBUR (HARI MINGGU)" : `TUTUP (${JAM_BUKA}:00 - ${JAM_TUTUP}:00)`;
+            updateModulToko(false, pesanTutup);
+        }
+
+        // Kunci atau aktifkan tombol checkout utama
+        let btnCheckout = document.getElementById("btn_checkout");
+        if (btnCheckout) {
+            if (tokoBuka) {
+                btnCheckout.disabled = false;
+                btnCheckout.className = "w-full bg-green-600 hover:bg-green-700 text-white font-black py-2.5 rounded-lg text-[11px] shadow-xs cursor-pointer text-center flex items-center justify-center gap-1.5 transition active:scale-95";
+                btnCheckout.innerText = "✅ SELESAIKAN PESANAN";
+            } else {
+                btnCheckout.disabled = true;
+                btnCheckout.className = "w-full bg-gray-400 text-gray-200 font-black py-2.5 rounded-lg text-[11px] cursor-not-allowed text-center flex items-center justify-center gap-1.5";
+                btnCheckout.innerText = "🔒 KEDAI SEDANG TUTUP";
+            }
+        }
+    }
+
+    function updateModulToko(isBuka, teks) {
+        let elStatus = document.getElementById("status_toko");
+        let elIndikator = document.getElementById("indikator_toko");
+        let elTeks = document.getElementById("teks_toko");
+
+        if (elStatus && elIndikator && elTeks) {
+            if (isBuka) {
+                elStatus.className = "text-[10px] font-bold px-2.5 py-1 rounded-md flex items-center gap-1.5 shadow-xs bg-emerald-600 text-white";
+                elIndikator.className = "w-2 h-2 rounded-full bg-emerald-200 animate-pulse";
+            } else {
+                elStatus.className = "text-[10px] font-bold px-2.5 py-1 rounded-md flex items-center gap-1.5 shadow-xs bg-red-600 text-white";
+                elIndikator.className = "w-2 h-2 rounded-full bg-red-200";
+            }
+            elTeks.innerText = teks;
+        }
+    }
 
     function loadData() {
         let loadingEl = document.getElementById("kontainer_kartu_menu");
@@ -407,12 +470,10 @@
             html += `
                 <div class="rounded-2xl overflow-hidden shadow-xs border border-gray-200/60 bg-white">
                     <button type="button" onclick="toggleKartu(${indexKartu})" class="w-full ${kartu.temaWarna} px-4 py-2.5 flex justify-between items-center cursor-pointer select-none text-left shadow-xs transition active:scale-[0.98]">
-                        <!-- Sisi Kiri: Nama Kategori -->
                         <h3 class="font-bold text-xs tracking-wide leading-tight flex items-center gap-2 pr-2">
                             <span>${kartu.namaKartu}</span>
                         </h3>
                         
-                        <!-- Sisi Kanan: Jumlah Opsi & Panah -->
                         <div class="flex items-center gap-1.5 shrink-0 text-right">
                             <span class="text-[11px] font-semibold opacity-95 whitespace-nowrap">${kartu.items.length} opsi</span>
                             <span id="${idPanahKartu}" class="text-[10px] font-bold opacity-80">${isOpen ? '▲' : '▼'}</span>
@@ -435,7 +496,7 @@
                     : '';
 
                 html += `
-                    <div class="bg-white border border-gray-200 rounded-lg p-2.5 shadow-xs hover:border-amber-400 transition ${!stokReady ? 'opacity-60' : ''}">
+                    <div class="bg-white border border-gray-200 rounded-lg p-2.5 shadow-xs hover:border-amber-400 transition ${(!stokReady || !tokoBuka) ? 'opacity-60' : ''}">
                         <div class="flex justify-between items-start gap-2 mb-1">
                             <div>
                                 <span class="font-extrabold text-xs text-gray-800 leading-snug block">${item.produk}</span>
@@ -453,7 +514,11 @@
                             </div>
 
                             <div class="w-28 shrink-0">
-                                ${stokReady ? `
+                                ${!tokoBuka ? `
+                                    <div class="w-full bg-gray-200 text-gray-600 font-black text-[9px] py-1.5 rounded text-center border border-gray-300 select-none">
+                                        🔒 TOKO TUTUP
+                                    </div>
+                                ` : stokReady ? `
                                     <div class="space-y-1">
                                         <div class="flex items-center bg-gray-50 border border-gray-300 rounded overflow-hidden h-6">
                                             <button onclick="kurangQty('${idInput}')" type="button" class="px-2 h-full text-gray-700 font-black hover:bg-gray-200 text-xs cursor-pointer">-</button>
@@ -496,6 +561,11 @@
     }
 
     function tambahKeKeranjang(namaItem, harga, idInput, maxStok) {
+        if (!tokoBuka) {
+            alert("Mohon maaf, kedai Bite & Dim sedang tutup / libur. Silakan pesan pada jam operasional (Senin-Sabtu, 14:00 - 21:00 WITA).");
+            return;
+        }
+
         let qtyInput = parseInt(document.getElementById(idInput).value) || 1;
         let idx = keranjang.findIndex(x => x.nama === namaItem);
 
@@ -582,6 +652,11 @@
     }
 
     function prosesOrderPelanggan() {
+        if (!tokoBuka) {
+            alert("Mohon maaf, kedai Bite & Dim sedang tutup / libur. Silakan pesan pada jam operasional (Senin-Sabtu, 14:00 - 21:00 WITA).");
+            return;
+        }
+
         if (keranjang.length === 0) {
             alert("Keranjang masih kosong, Bro!");
             return;
